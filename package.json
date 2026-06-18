@@ -1,0 +1,59 @@
+{
+  "name": "stockflow-s-plus-fullstack-unificado",
+  "version": "1.0.0",
+  "description": "StockFlow S Plus unificado: frontend premium + backend Node/Express/PostgreSQL/Prisma/Auth/Testes/Deploy.",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:studio": "prisma studio",
+    "db:seed": "node prisma/seed.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "lint:check": "node scripts/check-env.js",
+    "predeploy": "npm run prisma:generate && npm run test",
+    "deploy:db": "prisma migrate deploy",
+    "verify:api": "node scripts/verify-api.js",
+    "open": "node scripts/open-local.js",
+    "full:dev": "npm run dev",
+    "prisma:push": "prisma db push",
+    "promote:owner": "node scripts/promote-owner.js",
+    "check:login": "node scripts/check-login.js",
+    "consolidate:owner": "node scripts/consolidate-owner.js",
+    "check:visual-clean": "node -e \"const fs=require('fs');const i=fs.readFileSync('public/index.html','utf8');const a=fs.readFileSync('public/app.js','utf8');console.log('styles.css', i.includes('/styles.css')?'OK':'MISSING');console.log('force-ui removed', !i.includes('stockflow-force-ui') && !a.includes('stockFlowForceUI')?'OK':'FOUND');console.log('rescue-css removed', !i.includes('stockflow-ui-rescue') && !a.includes('stockflow-ui-rescue')?'OK':'FOUND');console.log('auth stabilizer', i.includes('stockflow-auth-stabilizer')?'OK':'MISSING');\""
+  },
+  "keywords": [
+    "stockflow",
+    "nodejs",
+    "express",
+    "prisma",
+    "postgresql",
+    "backend"
+  ],
+  "author": "Luiz Silva",
+  "license": "MIT",
+  "dependencies": {
+    "@prisma/client": "6.19.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "helmet": "^8.0.0",
+    "morgan": "^1.10.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9",
+    "prisma": "6.19.3",
+    "vitest": "^2.1.8",
+    "supertest": "^7.0.0",
+    "@vitest/coverage-v8": "^2.1.8",
+    "@playwright/test": "^1.49.1"
+  }
+}

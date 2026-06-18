@@ -1,0 +1,30 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: stockflow_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: stockflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - stockflow_pgdata:/var/lib/postgresql/data
+
+  api:
+    build: .
+    container_name: stockflow_api
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    ports:
+      - "3333:3333"
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/stockflow?schema=public"
+      JWT_SECRET: "stockflow-dev-secret"
+      JWT_EXPIRES_IN: "7d"
+      PORT: "3333"
+
+volumes:
+  stockflow_pgdata:

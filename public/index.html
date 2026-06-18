@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StockFlow S Plus</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/styles.css?v=447" />
+</head>
+<body class="is-logged-out">
+  <div id="toast" class="toast"></div>
+
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">SF</div>
+        <div>
+          <strong>StockFlow</strong>
+          <span>Fullstack S Plus</span>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Menu principal">
+        <button class="nav-item active" data-view="dashboard">▦ Dashboard</button>
+        <button class="nav-item" data-view="products">▫ Produtos</button>
+        <button class="nav-item" data-view="stock">⇄ Estoque</button>
+        <button class="nav-item" data-view="sales">◆ Vendas</button>
+        <button class="nav-item" data-view="finance">● Financeiro</button>
+        <button class="nav-item" data-view="audit">☻ Auditoria</button>
+        <button class="nav-item" data-view="reports">▤ Relatórios</button>
+        <button class="nav-item" data-view="users">☻ Usuários</button>
+      </nav>
+
+      <div class="api-card">
+        <span>API</span>
+        <strong id="apiStatus">Verificando...</strong>
+        <small>Frontend conectado ao backend real.</small>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="pill" id="authBadge">Não autenticado</div>
+        <div class="pill auth-only hidden">Última atualização: <span id="lastUpdate">—</span></div>
+        <button class="ghost-btn auth-only hidden" id="refreshBtn">Atualizar</button>
+        <button class="primary-btn small auth-only hidden" id="logoutBtn">Sair</button>
+      </header>
+
+      <section id="loginView" class="login-view">
+        <form id="loginForm" class="login-card">
+          <span class="eyebrow">Acesso seguro</span>
+          <h1>Entrar no<br>StockFlow</h1>
+          <p>Use o usuário Owner criado no backend.</p>
+          <label>E-mail<input id="loginEmail" type="email" value="owner@stockflow.dev" autocomplete="username" /></label>
+          <label>Senha<input id="loginPassword" type="password" value="123456" autocomplete="current-password" /></label>
+          <button class="primary-btn full" type="submit">Entrar</button>
+          <small>Demo: owner@stockflow.dev / 123456</small>
+        </form>
+      </section>
+
+      <section id="appView" class="hidden">
+        <section class="view active" id="dashboardView">
+          <div class="page-title"><span class="eyebrow">Sistema unificado</span><h1>Dashboard executivo</h1></div>
+          <div class="hero executive-hero">
+            <div>
+              <span class="eyebrow">Resumo operacional</span>
+              <h2>Controle de estoque, vendas e financeiro com dados reais da API.</h2>
+              <p>Visão executiva com receita, margem, alertas críticos, últimas atividades e ranking comercial.</p>
+            </div>
+            <div class="hero-metrics">
+              <div><strong id="heroRevenue">R$ 0,00</strong><span>Receita operacional</span></div>
+              <div><strong id="heroProfit">R$ 0,00</strong><span>Lucro estimado</span></div>
+            </div>
+          </div>
+          <div class="metrics-grid">
+            <div class="metric-card"><span>Receita</span><strong id="metricRevenue">R$ 0,00</strong><small>Vendas não canceladas</small></div>
+            <div class="metric-card"><span>Lucro</span><strong id="metricProfit">R$ 0,00</strong><small id="metricMargin">Margem 0%</small></div>
+            <div class="metric-card"><span>Produtos ativos</span><strong id="metricProducts">0</strong><small>Catálogo operacional</small></div>
+            <div class="metric-card"><span>Estoque crítico</span><strong id="metricCritical">0</strong><small>Revisar reposição</small></div>
+            <div class="metric-card"><span>Vendas</span><strong id="metricSales">0</strong><small>Histórico comercial</small></div>
+            <div class="metric-card"><span>Ticket médio</span><strong id="metricTicket">R$ 0,00</strong><small>Por venda</small></div>
+            <div class="metric-card"><span>Despesas</span><strong id="metricExpenses">R$ 0,00</strong><small>Fluxo operacional</small></div>
+            <div class="metric-card"><span>Auditoria</span><strong id="metricAudit">0</strong><small>Eventos rastreados</small></div>
+          </div>
+          <div class="grid-2">
+            <div class="panel"><div class="panel-head"><div><span class="eyebrow">Alertas</span><h3>Produtos em estoque crítico</h3></div><button class="ghost-btn" data-open-view="products">Ver produtos</button></div><div class="table-wrap"><table><thead><tr><th>Produto</th><th>Estoque</th><th>Mínimo</th><th>Status</th></tr></thead><tbody id="criticalRows"></tbody></table></div></div>
+            <div class="panel"><div class="panel-head"><div><span class="eyebrow">Performance</span><h3>Top produtos por receita</h3></div><button class="ghost-btn" data-open-view="reports">Ver relatório</button></div><div class="table-wrap"><table><thead><tr><th>Produto</th><th>Qtd.</th><th>Receita</th></tr></thead><tbody id="topProductsRows"></tbody></table></div></div>
+            <div class="panel"><span class="eyebrow">Atividades</span><h3>Últimas movimentações operacionais</h3><div id="activityList" class="activity-list"></div></div>
+            <div class="panel"><span class="eyebrow">Acesso atual</span><h3 id="currentAccessTitle">Perfil</h3><p id="currentAccessText">Faça login para visualizar permissões.</p><div id="permissionChips" class="chips"></div></div>
+          </div>
+        </section>
+
+        <section class="view" id="productsView">
+          <div class="page-title"><span class="eyebrow">Catálogo</span><h1>Produtos</h1></div>
+          <div class="module-grid">
+            <form id="productForm" class="panel smart-form">
+              <span class="eyebrow">Produtos</span><h3>Novo produto</h3>
+              <label>Nome<input name="name" placeholder="Ex: Webcam Full HD" required /></label>
+              <div class="form-row"><label>SKU<input name="sku" placeholder="SKU-001" /></label><label>Categoria<input name="categoryName" placeholder="Periféricos" /></label></div>
+              <div class="form-row"><label>Preço<input name="price" type="number" step="0.01" min="0" required /></label><label>Custo<input name="cost" type="number" step="0.01" min="0" required /></label></div>
+              <div class="form-row"><label>Estoque<input name="stock" type="number" min="0" required /></label><label>Mínimo<input name="minStock" type="number" min="0" required /></label></div>
+              <button class="primary-btn">Criar produto</button>
+              <p class="info-box">Produtos inativados permanecem preservados no histórico e podem ser reativados.</p>
+            </form>
+            <div class="panel"><div class="panel-head"><div><span class="eyebrow">Catálogo</span><h3>Produtos cadastrados</h3></div><span class="pill" id="productsCount">0 produtos</span></div><div class="table-wrap"><table><thead><tr><th>Produto</th><th>Categoria</th><th>Preço</th><th>Custo</th><th>Estoque</th><th>Status</th><th>Ações</th></tr></thead><tbody id="productsRows"></tbody></table></div></div>
+          </div>
+        </section>
+
+        <section class="view" id="stockView">
+          <div class="page-title"><span class="eyebrow">Operação</span><h1>Estoque</h1></div>
+          <div class="module-grid">
+            <form id="stockForm" class="panel smart-form"><span class="eyebrow">Estoque</span><h3>Nova movimentação</h3><label>Produto<select name="productId" required></select></label><div class="form-row"><label>Tipo<select name="type"><option value="IN">Entrada</option><option value="OUT">Saída</option><option value="ADJUSTMENT">Ajuste</option></select></label><label>Quantidade<input name="quantity" type="number" min="1" required /></label></div><label>Motivo<input name="reason" placeholder="Ex: reposição de fornecedor" /></label><button class="primary-btn">Registrar movimentação</button></form>
+            <div class="panel"><span class="eyebrow">Histórico</span><h3>Movimentações</h3><div class="table-wrap"><table><thead><tr><th>Data</th><th>Produto</th><th>Tipo</th><th>Qtd.</th><th>Usuário</th></tr></thead><tbody id="stockRows"></tbody></table></div></div>
+          </div>
+        </section>
+
+        <section class="view" id="salesView">
+          <div class="page-title"><span class="eyebrow">Comercial</span><h1>Vendas</h1></div>
+          <div class="module-grid">
+            <form id="saleForm" class="panel smart-form"><span class="eyebrow">Vendas</span><h3>Nova venda</h3><label>Cliente<input name="customerName" placeholder="Nome do cliente" required /></label><label>Produto<select name="productId" required></select></label><div class="form-row"><label>Quantidade<input name="quantity" type="number" min="1" value="1" required /></label><label>Desconto<input name="discount" type="number" step="0.01" min="0" value="0" /></label></div><button class="primary-btn">Registrar venda</button><p class="info-box">Vendas canceladas não são excluídas. Elas ficam disponíveis para auditoria e podem ser reativadas quando houver estoque.</p></form>
+            <div class="panel"><span class="eyebrow">Comercial</span><h3>Vendas recentes</h3><div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Total</th><th>Status</th><th>Itens</th><th>Data</th><th>Ações</th></tr></thead><tbody id="salesRows"></tbody></table></div></div>
+          </div>
+        </section>
+
+        <section class="view" id="financeView">
+          <div class="page-title"><span class="eyebrow">Financeiro</span><h1>Financeiro</h1></div>
+          <div class="metrics-grid"><div class="metric-card"><span>Receita</span><strong id="financeRevenue">R$ 0,00</strong><small>Vendas ativas</small></div><div class="metric-card"><span>Despesas</span><strong id="financeExpenses">R$ 0,00</strong><small>Não canceladas</small></div><div class="metric-card"><span>Lucro</span><strong id="financeProfit">R$ 0,00</strong><small>Estimado</small></div><div class="metric-card"><span>Margem</span><strong id="financeMargin">0%</strong><small>Líquida</small></div></div>
+          <div class="module-grid"><form id="expenseForm" class="panel smart-form"><span class="eyebrow">Financeiro</span><h3>Nova despesa</h3><label>Descrição<input name="description" placeholder="Ex: compra de mercadorias" required /></label><div class="form-row"><label>Categoria<input name="category" value="Compras" required /></label><label>Valor<input name="amount" type="number" step="0.01" min="0" required /></label></div><label>Status<select name="status"><option value="PAID">Pago</option><option value="PENDING">Pendente</option></select></label><button class="primary-btn">Registrar despesa</button><p class="info-box">Despesas canceladas permanecem no histórico para auditoria e governança financeira.</p></form><div class="panel"><span class="eyebrow">Fluxo</span><h3>Despesas</h3><div class="table-wrap"><table><thead><tr><th>Descrição</th><th>Categoria</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead><tbody id="expensesRows"></tbody></table></div></div></div>
+        </section>
+
+        <section class="view" id="auditView">
+          <div class="page-title"><span class="eyebrow">Governança</span><h1>Auditoria operacional</h1></div>
+          <div class="panel"><div class="panel-head"><div><span class="eyebrow">Trilha de auditoria</span><h3>Histórico detalhado</h3></div><button class="ghost-btn" id="auditRefreshBtn">Atualizar auditoria</button></div><div class="metrics-grid compact"><div class="metric-card"><span>Eventos auditados</span><strong id="auditTotal">0</strong><small>Últimos registros</small></div><div class="metric-card"><span>Usuários envolvidos</span><strong id="auditUsers">0</strong><small>Operadores rastreados</small></div><div class="metric-card"><span>Ações críticas</span><strong id="auditCritical">0</strong><small>Cancelamentos/desativações</small></div></div><div class="table-wrap"><table><thead><tr><th>Data</th><th>Usuário</th><th>Cargo</th><th>Módulo</th><th>Ação</th><th>Detalhes</th></tr></thead><tbody id="auditRows"></tbody></table></div></div>
+        </section>
+
+        <section class="view" id="reportsView">
+          <div class="page-title"><span class="eyebrow">Relatórios</span><h1>Relatórios profissionais</h1></div>
+          <div class="panel report-panel" id="reportPanel"><div class="panel-head"><div><span class="eyebrow">Resumo executivo</span><h3>Análise automática e documentação operacional</h3></div><div class="button-group"><button class="ghost-btn" id="copyReportBtn">Copiar resumo</button><button class="ghost-btn" id="exportCsvBtn">Exportar CSV</button><button class="primary-btn" id="generateReportBtn">Gerar relatório</button></div></div><p id="reportText">Relatório ainda não gerado nesta sessão. Gere uma análise executiva com base nos dados atuais da API.</p><div class="report-progress"><span id="reportProgressBar"></span></div><div class="metrics-grid compact"><div class="metric-card"><span>Receita</span><strong id="reportRevenue">R$ 0,00</strong></div><div class="metric-card"><span>Lucro</span><strong id="reportProfit">R$ 0,00</strong></div><div class="metric-card"><span>Produtos críticos</span><strong id="reportCritical">0</strong></div></div><div class="grid-2"><div class="panel nested"><span class="eyebrow">Documentação</span><h3>Resumo para README/portfólio</h3><p id="reportDocText">A seção de documentação será preenchida ao gerar relatório.</p></div><div class="panel nested"><span class="eyebrow">Operação</span><h3>Recomendações automáticas</h3><ul id="reportRecommendations" class="recommendations"><li>Gere o relatório para ver recomendações.</li></ul></div></div></div>
+        </section>
+
+        <section class="view" id="usersView">
+          <div class="page-title"><span class="eyebrow">Permissões</span><h1>Usuários e permissões</h1></div>
+          <div class="module-grid"><form id="userForm" class="panel smart-form"><span class="eyebrow">Permissões</span><h3>Novo usuário</h3><label>Nome<input name="name" placeholder="Ex: Gerente Operacional" required /></label><label>E-mail<input name="email" type="email" placeholder="usuario@stockflow.dev" required /></label><div class="form-row"><label>Senha<input name="password" type="password" value="123456" required /></label><label>Cargo<select name="role"><option value="ADMIN">Administrador</option><option value="MANAGER">Gerente</option><option value="STOCK">Estoque</option><option value="SALES">Vendas</option><option value="FINANCE">Financeiro</option></select></label></div><button class="primary-btn">Criar usuário</button><p class="info-box">Owner/Criador pode gerenciar usuários. Por segurança, o Owner não é rebaixado nem desativado por si mesmo.</p></form><div class="panel"><div class="panel-head"><div><span class="eyebrow">Equipe</span><h3>Usuários da empresa</h3></div><span class="pill">Owner/Admin gerenciam usuários</span></div><div class="table-wrap"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Cargo</th><th>Criado em</th><th>Ações</th></tr></thead><tbody id="usersRows"></tbody></table></div></div></div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+
+  <div id="detailsModal" class="modal hidden sf447-modal">
+    <div class="modal-card sf447-modal-card sf447-details-card">
+      <div class="sf447-modal-header">
+        <div>
+          <span class="eyebrow" id="detailsEyebrow">Detalhes</span>
+          <h3 id="detailsTitle">Detalhes da operação</h3>
+        </div>
+        <button class="sf447-icon-btn" id="closeDetailsX" type="button" aria-label="Fechar detalhes">×</button>
+      </div>
+      <div id="detailsBody" class="sf447-details-body"></div>
+      <div class="modal-actions">
+        <button class="primary-btn" id="closeDetailsBtn" type="button">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirmModal" class="modal hidden sf447-modal">
+    <div class="modal-card sf447-modal-card sf447-confirm-card">
+      <div class="sf447-modal-header">
+        <div>
+          <span class="eyebrow">Confirmação necessária</span>
+          <h3 id="confirmTitle">Confirmar ação</h3>
+        </div>
+        <button class="sf447-icon-btn" id="cancelConfirmX" type="button" aria-label="Fechar confirmação">×</button>
+      </div>
+      <p id="confirmText">Deseja continuar?</p>
+      <p class="sf447-confirm-note">Esta ação será preservada no histórico operacional e poderá aparecer na auditoria.</p>
+      <div class="modal-actions">
+        <button class="ghost-btn" id="cancelConfirm" type="button">Cancelar</button>
+        <button class="primary-btn" id="confirmAction" type="button">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js?v=447"></script>
+</body>
+</html>

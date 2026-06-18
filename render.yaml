@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: stockflow-s-plus
+    env: node
+    plan: free
+    buildCommand: npm install && npx prisma generate
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3333
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: DATABASE_URL
+        sync: false

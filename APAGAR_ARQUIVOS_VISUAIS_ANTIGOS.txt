@@ -1,0 +1,3 @@
+Apague estes arquivos da pasta public se existirem:
+- public/stockflow-force-ui.js
+- public/stockflow-ui-rescue.css
