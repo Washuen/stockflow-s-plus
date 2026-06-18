@@ -255,7 +255,13 @@ npm run check:env
 
 ---
 
-## Deploy
+## Deploy 
+
+Production URL:
+
+https://stockflow-s-plus.onrender.com
+
+This project is deployed on Render with a production PostgreSQL database, Prisma ORM and a Node/Express backend.
 
 Este projeto pode ser publicado em plataformas que suportam Node.js + PostgreSQL, como:
 
