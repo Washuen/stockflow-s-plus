@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const required = ['DATABASE_URL', 'JWT_SECRET'];
 
 const missing = required.filter((key) => !process.env[key]);

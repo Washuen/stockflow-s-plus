@@ -58,8 +58,8 @@ const permissions = {
 function can(role, permission) {
   if (role === 'OWNER') return true;
 
-  const permissions = ROLE_PERMISSIONS[role] || [];
-  return permissions.includes('*') || permissions.includes(permission);
+  const rolePermissions = permissions[role] || [];
+  return rolePermissions.includes('*') || rolePermissions.includes(permission);
 }
 
 module.exports = {

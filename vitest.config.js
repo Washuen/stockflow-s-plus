@@ -9,7 +9,17 @@ module.exports = defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      exclude: ['node_modules/', 'tests/']
+      include: ['src/**/*.js'],
+      exclude: [
+        'src/server.js',
+        'public/**',
+        'scripts/**',
+        'prisma/**',
+        'tests/**',
+        'playwright.config.js',
+        'vite.config.js',
+        'node_modules/**'
+      ]
     }
   }
 });

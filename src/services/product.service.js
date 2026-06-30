@@ -6,15 +6,19 @@ async function listProducts(companyId, filters = {}) {
   return prisma.product.findMany({
     where: {
       companyId,
-      ...(search ? {
-        OR: [
-          { name: { contains: search, mode: 'insensitive' } },
-          { sku: { contains: search, mode: 'insensitive' } }
-        ]
-      } : {}),
+      ...(search
+        ? {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' } },
+              { sku: { contains: search, mode: 'insensitive' } }
+            ]
+          }
+        : {}),
       ...(status ? { status } : {}),
       ...(categoryId ? { categoryId } : {}),
-      ...(stockStatus === 'critical' ? { stock: { lte: prisma.product.fields.minStock } } : {})
+      ...(stockStatus === 'critical'
+        ? { stock: { lte: prisma.product.fields.minStock } }
+        : {})
     },
     include: {
       category: true,
@@ -39,7 +43,27 @@ async function getProduct(companyId, id) {
   return product;
 }
 
+async function ensureUniqueSku(companyId, sku, currentProductId = null) {
+  if (!sku) return;
+
+  const existingProduct = await prisma.product.findFirst({
+    where: {
+      companyId,
+      sku,
+      ...(currentProductId ? { NOT: { id: currentProductId } } : {})
+    }
+  });
+
+  if (existingProduct) {
+    const error = new Error('SKU já cadastrado');
+    error.statusCode = 409;
+    throw error;
+  }
+}
+
 async function createProduct(companyId, data) {
+  await ensureUniqueSku(companyId, data.sku);
+
   return prisma.product.create({
     data: {
       ...data,
@@ -51,6 +75,10 @@ async function createProduct(companyId, data) {
 
 async function updateProduct(companyId, id, data) {
   await getProduct(companyId, id);
+
+  if (data.sku) {
+    await ensureUniqueSku(companyId, data.sku, id);
+  }
 
   return prisma.product.update({
     where: { id },

@@ -20,6 +20,7 @@ const salesRoutes = require('./routes/sales.routes');
 const expensesRoutes = require('./routes/expenses.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
 const reportsRoutes = require('./routes/reports.routes');
+const analyticsRoutes = require('./routes/analytics.routes');
 
 const app = express();
 
@@ -56,6 +57,7 @@ app.use('/api/sales', salesRoutes);
 app.use('/api/expenses', expensesRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/reports', reportsRoutes);
+app.use('/api/analytics', authenticate, analyticsRoutes);
 
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api')) return next();
