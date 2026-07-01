@@ -36,11 +36,12 @@ const DEMO_USERS = [
   }
 ];
 
-async function findDemoCompany() {
+async function findOrCreateDemoCompany() {
   let company = await prisma.company.findFirst({
     where: {
       OR: [
         { document: '00000000000100' },
+        { document: '00.000.000/0001-00' },
         { name: 'StockFlow Demo Company' }
       ]
     }
@@ -51,6 +52,13 @@ async function findDemoCompany() {
       data: {
         name: 'StockFlow Demo Company',
         document: '00000000000100'
+      }
+    });
+  } else {
+    company = await prisma.company.update({
+      where: { id: company.id },
+      data: {
+        name: 'StockFlow Demo Company'
       }
     });
   }
@@ -99,13 +107,12 @@ async function upsertDemoUser(companyId, demoUser) {
 async function main() {
   console.log('Normalizando usuários demo do StockFlow...');
 
-  const company = await findDemoCompany();
+  const company = await findOrCreateDemoCompany();
 
   const demoEmails = DEMO_USERS.map((user) => user.email);
 
   for (const demoUser of DEMO_USERS) {
     const user = await upsertDemoUser(company.id, demoUser);
-
     console.log(`OK: ${user.name} | ${user.email} | ${user.role}`);
   }
 
@@ -128,5 +135,5 @@ main()
     process.exit(1);
   })
   .finally(async () => {
-    prisma.$disconnect();
+    await prisma.$disconnect();
   });
