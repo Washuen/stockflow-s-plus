@@ -1,11 +1,13 @@
 import request from 'supertest';
-import app from '../src/app.js';
+import app from '../src/app';
+
+export { request, app };
 
 export async function loginAsAdmin() {
   const response = await request(app)
     .post('/api/auth/login')
     .send({
-      email: 'admin@stockflow.dev',
+      email: 'owner@stockflow.dev',
       password: '123456'
     });
 
@@ -21,5 +23,3 @@ export function authHeader(token) {
     Authorization: `Bearer ${token}`
   };
 }
-
-export { app, request };

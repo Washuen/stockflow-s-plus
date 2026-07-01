@@ -2,7 +2,7 @@ const bcrypt = require('bcryptjs');
 const { prisma } = require('../config/prisma');
 
 const OWNER_EMAIL = 'owner@stockflow.dev';
-const LEGACY_OWNER_EMAIL = 'admin@stockflow.dev';
+
 const { signToken } = require('../utils/jwt');
 
 async function register(data) {
@@ -63,7 +63,7 @@ async function register(data) {
 }
 
 async function login(data) {
-  const normalizedEmail = data.email === LEGACY_OWNER_EMAIL ? OWNER_EMAIL : data.email;
+  const normalizedEmail = data.email;
   const user = await prisma.user.findUnique({
     where: { email: normalizedEmail },
     include: { company: true }

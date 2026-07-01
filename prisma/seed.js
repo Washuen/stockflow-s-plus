@@ -4,8 +4,39 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 const DEMO_PASSWORD = '123456';
-const OWNER_EMAIL = 'owner@stockflow.dev';
-const LEGACY_EMAIL = 'admin@stockflow.dev';
+
+const DEMO_USERS = [
+  {
+    email: 'owner@stockflow.dev',
+    name: 'Owner StockFlow',
+    role: 'OWNER'
+  },
+  {
+    email: 'admin@stockflow.dev',
+    name: 'Administrator StockFlow',
+    role: 'ADMIN'
+  },
+  {
+    email: 'gerente@stockflow.dev',
+    name: 'Gerente Operacional',
+    role: 'MANAGER'
+  },
+  {
+    email: 'estoque@stockflow.dev',
+    name: 'Estoquista',
+    role: 'STOCK'
+  },
+  {
+    email: 'vendas@stockflow.dev',
+    name: 'Vendedor',
+    role: 'SALES'
+  },
+  {
+    email: 'financeiro@stockflow.dev',
+    name: 'Financeiro',
+    role: 'FINANCE'
+  }
+];
 
 async function findOrCreateCompany() {
   let company = await prisma.company.findFirst({
@@ -37,7 +68,7 @@ async function findOrCreateCompany() {
   return company;
 }
 
-async function upsertUserByEmail({ email, name, companyId, role = 'OWNER' }) {
+async function upsertUserByEmail({ email, name, companyId, role }) {
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
 
   const existing = await prisma.user.findUnique({
@@ -51,6 +82,7 @@ async function upsertUserByEmail({ email, name, companyId, role = 'OWNER' }) {
         name,
         role,
         isActive: true,
+        deletedAt: null,
         companyId,
         passwordHash
       }
@@ -63,6 +95,7 @@ async function upsertUserByEmail({ email, name, companyId, role = 'OWNER' }) {
       email,
       role,
       isActive: true,
+      deletedAt: null,
       companyId,
       passwordHash
     }
@@ -91,13 +124,13 @@ async function upsertSupplier(companyId) {
 
   if (existing) return existing;
 
-return prisma.supplier.create({
-  data: {
-    name: 'Fornecedor Tech Prime',
-    document: 'SUP-TECH-PRIME',
-    companyId
-  }
-});
+  return prisma.supplier.create({
+    data: {
+      name: 'Fornecedor Tech Prime',
+      document: 'SUP-TECH-PRIME',
+      companyId
+    }
+  });
 }
 
 async function upsertProduct(item, companyId, categoryId, supplierId) {
@@ -136,19 +169,20 @@ async function main() {
 
   const company = await findOrCreateCompany();
 
-  const owner = await upsertUserByEmail({
-    email: OWNER_EMAIL,
-    name: 'Owner StockFlow',
-    companyId: company.id,
-    role: 'OWNER'
-  });
+  const createdUsers = {};
 
-  await upsertUserByEmail({
-    email: LEGACY_EMAIL,
-    name: 'Owner StockFlow',
-    companyId: company.id,
-    role: 'OWNER'
-  });
+  for (const user of DEMO_USERS) {
+    const createdUser = await upsertUserByEmail({
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      companyId: company.id
+    });
+
+    createdUsers[user.email] = createdUser;
+  }
+
+  const owner = createdUsers['owner@stockflow.dev'];
 
   const categoryNames = [
     'Notebooks',
@@ -159,6 +193,7 @@ async function main() {
   ];
 
   const categoryMap = {};
+
   for (const name of categoryNames) {
     categoryMap[name] = await upsertCategory(name, company.id);
   }
@@ -223,6 +258,7 @@ async function main() {
   ];
 
   const productMap = {};
+
   for (const item of products) {
     const product = await upsertProduct(
       item,
@@ -230,6 +266,7 @@ async function main() {
       categoryMap[item.category].id,
       supplier.id
     );
+
     productMap[item.sku] = product;
   }
 
@@ -299,10 +336,12 @@ async function main() {
         companyId: company.id,
         userId: owner.id,
         metadata: {
-          message: 'Seed compatível com schema real executado',
-          ownerEmail: OWNER_EMAIL,
-          legacyEmail: LEGACY_EMAIL,
-          demoPassword: DEMO_PASSWORD
+          message: 'Seed demonstrativo executado com usuários por cargo',
+          demoPassword: DEMO_PASSWORD,
+          users: DEMO_USERS.map((user) => ({
+            email: user.email,
+            role: user.role
+          }))
         }
       }
     });
@@ -311,8 +350,12 @@ async function main() {
   }
 
   console.log('Seed completed.');
-  console.log(`Demo owner: ${OWNER_EMAIL}`);
-  console.log(`Legacy login also active: ${LEGACY_EMAIL}`);
+  console.log('Demo users:');
+
+  for (const user of DEMO_USERS) {
+    console.log(`${user.role}: ${user.email}`);
+  }
+
   console.log(`Demo password: ${DEMO_PASSWORD}`);
 }
 

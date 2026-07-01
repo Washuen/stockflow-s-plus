@@ -67,17 +67,18 @@ describe('auth.service', () => {
       expect(result.user.company).toBeTruthy();
     });
 
-    it('deve normalizar admin@stockflow.dev para owner@stockflow.dev', async () => {
-      const result = await authService.login({
-        email: 'admin@stockflow.dev',
-        password: '123456'
-      });
+ it('deve fazer login do admin demo como ADMIN', async () => {
+  const result = await authService.login({
+    email: 'admin@stockflow.dev',
+    password: '123456'
+  });
 
-      expect(result.token).toBeTruthy();
-      expect(result.user.email).toBe('owner@stockflow.dev');
-      expect(result.user.role).toBe('OWNER');
-      expect(result.user.passwordHash).toBeUndefined();
-    });
+  expect(result.token).toBeTruthy();
+  expect(result.user.email).toBe('admin@stockflow.dev');
+  expect(result.user.name).toBe('Administrator StockFlow');
+  expect(result.user.role).toBe('ADMIN');
+  expect(result.user.passwordHash).toBeUndefined();
+});
 
     it('deve bloquear login com usuário inexistente', async () => {
       await expect(

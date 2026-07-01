@@ -2,35 +2,35 @@ import { describe, it, expect } from 'vitest';
 import { app, request } from '../helpers.js';
 
 describe('Auth API', () => {
-  it('deve fazer login com usuário admin do seed', async () => {
-    const response = await request(app)
-      .post('/api/auth/login')
-      .send({
-        email: 'admin@stockflow.dev',
-        password: '123456'
-      });
+it('deve fazer login com usuário admin do seed', async () => {
+  const response = await request(app)
+    .post('/api/auth/login')
+    .send({
+      email: 'admin@stockflow.dev',
+      password: '123456'
+    });
 
-    expect(response.status).toBe(200);
-    expect(response.body.token).toBeTruthy();
-    expect(response.body.user.email).toBe('owner@stockflow.dev');
-    expect(response.body.user.passwordHash).toBeUndefined();
-    expect(response.body.user.role).toBe('OWNER');
-  });
+  expect(response.status).toBe(200);
+  expect(response.body.token).toBeTruthy();
+  expect(response.body.user.email).toBe('admin@stockflow.dev');
+  expect(response.body.user.passwordHash).toBeUndefined();
+  expect(response.body.user.role).toBe('ADMIN');
+});
 
-  it('deve fazer login com usuário owner oficial', async () => {
-    const response = await request(app)
-      .post('/api/auth/login')
-      .send({
-        email: 'owner@stockflow.dev',
-        password: '123456'
-      });
+it('deve fazer login com usuário owner do seed', async () => {
+  const response = await request(app)
+    .post('/api/auth/login')
+    .send({
+      email: 'owner@stockflow.dev',
+      password: '123456'
+    });
 
-    expect(response.status).toBe(200);
-    expect(response.body.token).toBeTruthy();
-    expect(response.body.user.email).toBe('owner@stockflow.dev');
-    expect(response.body.user.role).toBe('OWNER');
-    expect(response.body.user.passwordHash).toBeUndefined();
-  });
+  expect(response.status).toBe(200);
+  expect(response.body.token).toBeTruthy();
+  expect(response.body.user.email).toBe('owner@stockflow.dev');
+  expect(response.body.user.passwordHash).toBeUndefined();
+  expect(response.body.user.role).toBe('OWNER');
+});
 
   it('deve bloquear login com senha incorreta', async () => {
     const response = await request(app)

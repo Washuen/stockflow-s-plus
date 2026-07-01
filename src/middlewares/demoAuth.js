@@ -6,7 +6,7 @@ const { prisma } = require('../config/prisma');
  */
 async function demoAuth(req, res, next) {
   const user = await prisma.user.findFirst({
-    where: { email: 'admin@stockflow.dev' },
+    where: { email: 'owner@stockflow.dev' },
     include: { company: true }
   });
 
