@@ -12,6 +12,7 @@ module.exports = defineConfig({
       include: ['src/**/*.js'],
       exclude: [
         'src/server.js',
+        'src/middlewares/demoAuth.js',
         'public/**',
         'scripts/**',
         'prisma/**',

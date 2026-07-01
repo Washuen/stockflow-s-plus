@@ -36,6 +36,21 @@ async function getOwner(token) {
   return owner;
 }
 
+async function getCurrentUser(token) {
+  const response = await request(app)
+    .get('/api/auth/me')
+    .set(authHeader(token));
+
+  expect(response.status).toBe(200);
+
+  const user = response.body.user || response.body;
+
+  expect(user).toBeTruthy();
+  expect(user.id).toBeTruthy();
+
+  return user;
+}
+
 describe('Users API', () => {
   it('deve listar usuários autenticado', async () => {
     const token = await loginAsAdmin();
@@ -268,19 +283,17 @@ describe('Users API', () => {
     expect(response.status).toBe(400);
   });
 
-  it('deve bloquear /admin-status ao tentar desativar a própria conta', async () => {
-    const token = await loginAsAdmin();
-    const owner = await getOwner(token);
+ it('deve bloquear /admin-status ao tentar desativar a própria conta', async () => {
+  const token = await loginAsAdmin();
+  const currentUser = await getCurrentUser(token);
 
-    const response = await request(app)
-      .patch(`/api/users/${owner.id}/admin-status`)
-      .set(authHeader(token))
-      .send({
-        isActive: false
-      });
+  const response = await request(app)
+    .patch(`/api/users/${currentUser.id}/admin-status`)
+    .send({ isActive: false })
+    .set(authHeader(token));
 
-    expect(response.status).toBe(400);
-  });
+  expect(response.status).toBe(400);
+});
 
   it('deve retornar 404 no /admin-status para usuário inexistente', async () => {
     const token = await loginAsAdmin();
@@ -330,16 +343,16 @@ describe('Users API', () => {
     expect(response.body.user.isActive).toBe(false);
   });
 
-  it('deve bloquear /deactivate ao tentar desativar a própria conta', async () => {
-    const token = await loginAsAdmin();
-    const owner = await getOwner(token);
+it('deve bloquear /deactivate ao tentar desativar a própria conta', async () => {
+  const token = await loginAsAdmin();
+  const currentUser = await getCurrentUser(token);
 
-    const response = await request(app)
-      .patch(`/api/users/${owner.id}/deactivate`)
-      .set(authHeader(token));
+  const response = await request(app)
+    .patch(`/api/users/${currentUser.id}/deactivate`)
+    .set(authHeader(token));
 
-    expect(response.status).toBe(400);
-  });
+  expect(response.status).toBe(400);
+});
 
   it('deve retornar 404 ao desativar usuário inexistente via /deactivate', async () => {
     const token = await loginAsAdmin();
@@ -399,16 +412,16 @@ describe('Users API', () => {
     expect(response.body.user.isActive).toBe(false);
   });
 
-  it('deve bloquear DELETE ao tentar desativar a própria conta', async () => {
-    const token = await loginAsAdmin();
-    const owner = await getOwner(token);
+it('deve bloquear DELETE ao tentar desativar a própria conta', async () => {
+  const token = await loginAsAdmin();
+  const currentUser = await getCurrentUser(token);
 
-    const response = await request(app)
-      .delete(`/api/users/${owner.id}`)
-      .set(authHeader(token));
+  const response = await request(app)
+    .delete(`/api/users/${currentUser.id}`)
+    .set(authHeader(token));
 
-    expect(response.status).toBe(400);
-  });
+  expect(response.status).toBe(400);
+});
 
   it('deve retornar 404 ao deletar usuário inexistente', async () => {
     const token = await loginAsAdmin();
