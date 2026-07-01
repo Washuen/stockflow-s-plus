@@ -27,6 +27,14 @@ function saleTotal(s){ return n(s.total ?? s.totalAmount ?? s.amount); }
 function saleItems(s){ return s.items || s.saleItems || []; }
 function canManageUsers(){ return ['OWNER','ADMIN'].includes(String(currentUser?.role || '').toUpperCase()); }
 
+function removeSessionBooting() {
+  document.documentElement.classList.remove('sf-session-booting');
+
+  if (document.body) {
+    document.body.classList.remove('sf-session-booting');
+  }
+}
+
 async function api(path, options={}){
   const headers = {'Content-Type':'application/json', ...(options.headers||{})};
   if(token) headers.Authorization = `Bearer ${token}`;
@@ -38,9 +46,58 @@ async function api(path, options={}){
 }
 function withBody(method, body={}){ return {method, body:JSON.stringify(body)}; }
 
-function setAuthButtonsVisible(v){ $$('.auth-only').forEach(el=>el.classList.toggle('hidden',!v)); }
-function showAuthed(){ document.body.classList.add('is-authenticated'); document.body.classList.remove('is-logged-out'); $('#loginView').classList.add('hidden'); $('#appView').classList.remove('hidden'); setAuthButtonsVisible(true); $('#authBadge').textContent = currentUser ? `${currentUser.name} • ${currentUser.role==='OWNER'?'Owner / Criador':currentUser.role}` : 'Autenticado'; }
-function showLogin(){ document.body.classList.add('is-logged-out'); document.body.classList.remove('is-authenticated'); $('#loginView').classList.remove('hidden'); $('#appView').classList.add('hidden'); setAuthButtonsVisible(false); $('#authBadge').textContent='Não autenticado'; }
+function setAuthButtonsVisible(v){ 
+  $$('.auth-only').forEach(el=>el.classList.toggle('hidden',!v)); 
+}
+
+function removeSessionBooting(){
+  document.documentElement.classList.remove('sf-session-booting');
+
+  if(document.body){
+    document.body.classList.remove('sf-session-booting');
+  }
+}
+
+function roleLabel(role){
+  return ({
+    OWNER: 'Owner / Criador',
+    ADMIN: 'Administrador',
+    MANAGER: 'Gerente',
+    STOCK: 'Estoque',
+    SALES: 'Vendas',
+    FINANCE: 'Financeiro'
+  })[String(role || '').toUpperCase()] || role || '-';
+}
+
+function showAuthed(){ 
+  document.body.classList.add('is-authenticated'); 
+  document.body.classList.remove('is-logged-out'); 
+
+  $('#loginView').classList.add('hidden'); 
+  $('#appView').classList.remove('hidden'); 
+
+  setAuthButtonsVisible(true); 
+
+  $('#authBadge').textContent = currentUser 
+    ? `${currentUser.name} • ${roleLabel(currentUser.role)}` 
+    : 'Autenticado'; 
+
+  removeSessionBooting();
+}
+
+function showLogin(){ 
+  document.body.classList.add('is-logged-out'); 
+  document.body.classList.remove('is-authenticated'); 
+
+  $('#loginView').classList.remove('hidden'); 
+  $('#appView').classList.add('hidden'); 
+
+  setAuthButtonsVisible(false); 
+
+  $('#authBadge').textContent = 'Não autenticado'; 
+
+  removeSessionBooting();
+}
 function setLastUpdate(){ $('#lastUpdate').textContent = new Date().toLocaleTimeString('pt-BR'); }
 
 async function login(e){ e?.preventDefault(); try{ const email=$('#loginEmail').value.trim(); const password=$('#loginPassword').value; const data=await api('/auth/login',withBody('POST',{email,password})); token=data.token||data.accessToken||data.jwt; currentUser=data.user||data.profile||data; if(!token) throw new Error('Token não retornado pela API.'); localStorage.setItem(TOKEN_KEY,token); localStorage.setItem(USER_KEY,JSON.stringify(currentUser)); showAuthed(); switchView('dashboard'); await refreshAll(); toast('Login realizado com sucesso.','success'); }catch(err){ toast(`Falha no login: ${err.message}`,'error'); } }
@@ -1118,3 +1175,13 @@ document.addEventListener('DOMContentLoaded',async()=>{ bindEvents(); await chec
   setTimeout(boot, 400);
   setTimeout(boot, 1200);
 })();
+
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.documentElement.classList.remove('sf-session-booting');
+
+    if (document.body) {
+      document.body.classList.remove('sf-session-booting');
+    }
+  }, 2500);
+});
