@@ -1,6 +1,7 @@
 const API = '/api';
 const TOKEN_KEY = 'stockflow_token';
 const USER_KEY = 'stockflow_user';
+const VIEW_KEY = 'stockflow_current_view';
 let token = localStorage.getItem(TOKEN_KEY);
 let currentUser = readUser();
 let products = [], sales = [], expenses = [], stockMovements = [], users = [], auditLogs = [], categories = [], reportsPayload = {}, summary = {};
@@ -119,10 +120,80 @@ function renderSales(){ $('#salesRows').innerHTML=sales.map(s=>{const canceled=s
 function renderFinance(){ const x=numbers(); $('#financeRevenue').textContent=money(x.revenue); $('#financeExpenses').textContent=money(x.expTotal); $('#financeProfit').textContent=money(x.profit); $('#financeMargin').textContent=`${x.margin.toFixed(1)}%`; $('#expensesRows').innerHTML=expenses.map(e=>{const canceled=expenseCanceled(e);return `<tr><td>${e.description||'-'}</td><td>${e.category||'-'}</td><td>${money(e.amount)}</td><td><span class="status ${canceled?'danger':statusClass(e.status)}">${statusLabel(e.status)}</span></td><td><button class="${canceled?'ghost-btn':'danger-btn'}" data-action="${canceled?'reactivate-expense':'cancel-expense'}" data-id="${e.id}">${canceled?'Reativar':'Cancelar'}</button></td></tr>`}).join('')||'<tr><td colspan="5">Nenhuma despesa registrada.</td></tr>'; }
 function renderAudit(){ const unique=new Set(auditLogs.map(l=>l.userEmail||l.user?.email||l.userName).filter(Boolean)); const critical=auditLogs.filter(l=>/CANCEL|DEACTIVATE|REACTIVATE|ROLE|STATUS|DELETE/i.test(l.action||'')).length; $('#auditTotal').textContent=auditLogs.length; $('#auditUsers').textContent=unique.size; $('#auditCritical').textContent=critical; $('#auditRows').innerHTML=auditLogs.map(l=>`<tr><td>${date(l.date||l.createdAt)}</td><td><strong>${l.userName||l.user?.name||'Sistema'}</strong><small>${l.userEmail||l.user?.email||'-'}</small></td><td><span class="chip">${l.userRole||l.user?.role||'-'}</span></td><td>${l.module||l.entity||'-'}</td><td><span class="status ok">${l.action||'-'}</span></td><td><small>${JSON.stringify(l.details||l.metadata||{}).slice(0,240)}</small></td></tr>`).join('')||'<tr><td colspan="6">Nenhum evento de auditoria encontrado.</td></tr>'; }
 function renderReports(){ const x=numbers(); $('#reportRevenue').textContent=money(x.revenue); $('#reportProfit').textContent=money(x.profit); $('#reportCritical').textContent=x.critical; }
-function renderUsers(){ $('#usersRows').innerHTML=users.map(u=>{const inactive=u.isActive===false||!!u.deletedAt; const me=currentUser?.id===u.id; const role=u.role||'-'; const roleOptions=['ADMIN','MANAGER','STOCK','SALES','FINANCE'].map(r=>`<option value="${r}" ${role===r?'selected':''}>${r}</option>`).join(''); const roleCell=(me||role==='OWNER')?`<span class="chip">${role==='OWNER'?'Owner / Criador':role}</span>`:`<select class="inline-select" data-action="change-user-role" data-id="${u.id}">${roleOptions}</select>`; const actions=me?'<span class="status ok">Conta atual</span>':`<button class="${inactive?'ghost-btn':'danger-btn'}" data-action="${inactive?'reactivate-user':'deactivate-user'}" data-id="${u.id}" data-name="${u.name||u.email}">${inactive?'Reativar':'Desativar'}</button>`; return `<tr><td><strong>${u.name||'-'}</strong>${me?'<small>Você</small>':''}</td><td>${u.email||'-'}</td><td>${roleCell}</td><td>${date(u.createdAt)}</td><td>${actions}</td></tr>`}).join('')||'<tr><td colspan="5">Nenhum usuário encontrado.</td></tr>'; }
+function renderUsers(){
+  $('#usersRows').innerHTML = users.map(u => {
+    const inactive = u.isActive === false || !!u.deletedAt;
+    const me = currentUser?.id === u.id;
+    const role = u.role || '-';
 
-function switchView(view, force=false){ if(!token&&!force&&view!=='dashboard'){showLogin();toast('Faça login para acessar esta sessão.','info');return;} $$('.nav-item').forEach(btn=>btn.classList.toggle('active',btn.dataset.view===view)); $$('.view').forEach(v=>{v.classList.remove('active');v.classList.add('hidden-view');v.style.display='none'}); const target=$(`#${view}View`); if(target){target.classList.add('active');target.classList.remove('hidden-view');target.style.display='block'} if(token){$('#loginView').classList.add('hidden');$('#appView').classList.remove('hidden')} }
-window.stockFlowOpenView=switchView;
+    const currentRole = String(currentUser?.role || '').toUpperCase();
+    const targetRole = String(role || '').toUpperCase();
+
+    const isOwnerTarget = targetRole === 'OWNER';
+    const isAdminUser = currentRole === 'ADMIN';
+    const isOwnerUser = currentRole === 'OWNER';
+
+    const canEditThisUser = canManageUsers() && !me && !(isAdminUser && isOwnerTarget);
+
+    const roleOptions = ['ADMIN','MANAGER','STOCK','SALES','FINANCE']
+      .map(r => `<option value="${r}" ${role === r ? 'selected' : ''}>${roleLabel(r)}</option>`)
+      .join('');
+
+    const roleCell = (!canEditThisUser || targetRole === 'OWNER')
+      ? `<span class="chip">${roleLabel(role)}</span>`
+      : `<select class="inline-select" data-action="change-user-role" data-id="${u.id}">${roleOptions}</select>`;
+
+    let actions = '<span class="status warn">Protegido</span>';
+
+    if(me){
+      actions = '<span class="status ok">Conta atual</span>';
+    } else if(canEditThisUser){
+      actions = `<button class="${inactive ? 'ghost-btn' : 'danger-btn'}" data-action="${inactive ? 'reactivate-user' : 'deactivate-user'}" data-id="${u.id}" data-name="${u.name || u.email}">${inactive ? 'Reativar' : 'Desativar'}</button>`;
+    }
+
+    return `
+      <tr>
+        <td><strong>${u.name || '-'}</strong>${me ? '<small>Você</small>' : ''}</td>
+        <td>${u.email || '-'}</td>
+        <td>${roleCell}</td>
+        <td>${date(u.createdAt)}</td>
+        <td>${actions}</td>
+      </tr>
+    `;
+  }).join('') || '<tr><td colspan="5">Nenhum usuário encontrado.</td></tr>';
+}
+function switchView(view, force=false){
+  if(!token && !force && view !== 'dashboard'){
+    showLogin();
+    toast('Faça login para acessar esta sessão.','info');
+    return;
+  }
+
+  localStorage.setItem(VIEW_KEY, view);
+
+  $$('.nav-item').forEach(btn =>
+    btn.classList.toggle('active', btn.dataset.view === view)
+  );
+
+  $$('.view').forEach(v => {
+    v.classList.remove('active');
+    v.classList.add('hidden-view');
+    v.style.display = 'none';
+  });
+
+  const target = $(`#${view}View`);
+
+  if(target){
+    target.classList.add('active');
+    target.classList.remove('hidden-view');
+    target.style.display = 'block';
+  }
+
+  if(token){
+    $('#loginView').classList.add('hidden');
+    $('#appView').classList.remove('hidden');
+  }
+}
 
 function confirmAction(title,text,callback){ $('#confirmTitle').textContent=title; $('#confirmText').textContent=text; confirmCallback=callback; $('#confirmModal').classList.remove('hidden'); }
 function closeConfirm(){ $('#confirmModal').classList.add('hidden'); confirmCallback=null; }
@@ -144,7 +215,20 @@ function bindEvents(){ $('#loginForm')?.addEventListener('submit',login); $('#lo
   document.addEventListener('change',ev=>{ const el=ev.target.closest('[data-action="change-user-role"]'); if(!el)return; const id=el.dataset.id, role=el.value; confirmAction('Alterar cargo',`Deseja alterar o cargo deste usuário para ${role}?`,()=>action(`/users/${id}/role`,'Cargo atualizado.',{role})); });
 }
 
-document.addEventListener('DOMContentLoaded',async()=>{ bindEvents(); await checkHealth(); if(token){ await refreshAll(); showAuthed(); } else { showLogin(); } });
+document.addEventListener('DOMContentLoaded', async () => {
+  bindEvents();
+
+  await checkHealth();
+
+  if (token) {
+    await refreshAll();
+
+    const savedView = localStorage.getItem(VIEW_KEY) || 'dashboard';
+    switchView(savedView);
+  } else {
+    showLogin();
+  }
+});
 
 
 // StockFlow 4.4.6 — Management Center + Advanced Reports

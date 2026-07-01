@@ -71,6 +71,25 @@ async function updateUserRole(companyId, actorUserId, targetUserId, role) {
     throw error;
   }
 
+  const actor = await prisma.user.findFirst({
+  where: {
+    id: actorUserId,
+    companyId
+  }
+});
+
+if (!actor) {
+  const error = new Error('Usuário executor não encontrado');
+  error.statusCode = 404;
+  throw error;
+}
+
+if (actor.role === 'ADMIN' && target.role === 'OWNER') {
+  const error = new Error('Administrador não pode alterar cargo do Owner');
+  error.statusCode = 403;
+  throw error;
+}
+
   const updated = await prisma.user.update({
     where: { id: targetUserId },
     data: { role }
@@ -133,6 +152,25 @@ async function setUserActiveStatus(companyId, actorUserId, targetUserId, isActiv
     error.statusCode = 400;
     throw error;
   }
+
+const actor = await prisma.user.findFirst({
+  where: {
+    id: actorUserId,
+    companyId
+  }
+});
+
+if (!actor) {
+  const error = new Error('Usuário executor não encontrado');
+  error.statusCode = 404;
+  throw error;
+}
+
+if (actor.role === 'ADMIN' && target.role === 'OWNER') {
+  const error = new Error('Administrador não pode alterar status do Owner');
+  error.statusCode = 403;
+  throw error;
+}
 
   const updated = await prisma.user.update({
     where: { id: targetUserId },
